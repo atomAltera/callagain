@@ -1,0 +1,24 @@
+{
+  "name": "callagain",
+  "version": "0.0.1-alpha.1",
+  "description": "Call again failed calls",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "test": "echo \"Error: no test specified\" && exit 0"
+  },
+  "keywords": [
+    "call",
+    "queue",
+    "retry",
+    "again"
+  ],
+  "author": {
+    "name": "Konstantin Alikhanov",
+    "email": "atomAltera@gmail.com"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "typescript": "^3.1.3"
+  }
+}
