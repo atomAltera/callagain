@@ -7,11 +7,18 @@
     "build": "tsc",
     "test": "echo \"Error: no test specified\" && exit 0"
   },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com:atomAltera/callagain.git"
+  },
   "keywords": [
     "call",
     "queue",
     "retry",
-    "again"
+    "again",
+    "deffer",
+    "deffered",
+    "replay"
   ],
   "author": {
     "name": "Konstantin Alikhanov",
