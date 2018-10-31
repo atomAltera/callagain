@@ -39,9 +39,9 @@ interface CallHistory {
     timestamp: number
 }
 
-export default class CallAgain {
+export class CallAgain {
     private readonly _maxConcurrentCalls?: number;
-    private readonly _maxRetryAttempts?: number;
+    private readonly _maxRetryAttempts: number;
     private readonly _delayOnRetry: number;
     private readonly _maxCallsPerInterval?: number;
     private readonly _intervalLength?: number;
@@ -57,7 +57,7 @@ export default class CallAgain {
 
     public constructor(options?: CallAgainOptions) {
         this._maxConcurrentCalls = options && options.maxConcurrentCalls;
-        this._maxRetryAttempts = options && options.maxRetryAttempts;
+        this._maxRetryAttempts = options && options.maxRetryAttempts || 10;
         this._delayOnRetry = options && options.delayOnRetry || 1000;
         this._maxCallsPerInterval = options && options.maxCallsPerInterval;
         this._intervalLength = options && options.intervalLength;
@@ -70,7 +70,7 @@ export default class CallAgain {
         this._onCycleTimerTick = this._onCycleTimerTick.bind(this);
 
         // Default error handler
-        this._errorHandlers.push(() => false);
+        this._errorHandlers.push(() => true);
     }
 
     /**
@@ -232,7 +232,8 @@ export default class CallAgain {
         this._history.insert({entryId: entry.id, timestamp: Date.now()});
 
         // TODO: Clean up done entries
-        Promise.resolve(entry.func.apply(undefined, entry.args))
+        Promise.resolve()
+            .then(() => entry.func.apply(undefined, entry.args))
             .then(result => {
                 entry.status = CallEntryStatus.done;
                 entry.resolve!(result);
