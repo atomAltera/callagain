@@ -226,6 +226,7 @@ export class CallAgain {
 
     private _processEntry(entry: CallEntry) {
         entry.status = CallEntryStatus.processing;
+        this._entries.update(entry);
 
         // TODO: Extract somewhere
         // TODO: Clean up somewhere
