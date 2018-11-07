@@ -57,4 +57,36 @@ for (int page=0; page<100; page++) {
 ```
 
 
+## Error handling
+
+You can specify error handlers
+
+```javascript
+const c = new CallAgain({...});
+
+// wrapping axios get call
+const getItems = c.wrap(url => axios.get);
+
+
+c.onError((err, next) => {
+    // here err is axios error
+    
+    // this function must return boolean value
+    // indicating should CallAgain retry or not
+    
+    
+    if (err.response.status >= 500) {
+            // Unknown server error, retry in *delayOnRetry* milliseconds
+            return true
+    }  
+        
+    
+    // if you do not know, how to deal with error, you should pass it to next handler
+    return next(err)
+});
+
+//handlers han be chained
+c.onError(...).onError(...).onError(...)
+```
+
 
