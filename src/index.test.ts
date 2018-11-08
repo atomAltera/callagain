@@ -1,4 +1,4 @@
-import {CallAgain} from '../src';
+import {CallAgain} from './index';
 
 describe("Wrapper functions", () => {
     test("calls wrapped function when needed", async () => {
