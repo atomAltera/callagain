@@ -90,3 +90,20 @@ c.onError(...).onError(...).onError(...)
 ```
 
 
+## Rejecting all
+
+You can reject all pending calls by calling `rejectAll` method
+
+```javascript
+const c = new CallAgain({...});
+
+c.wrap(() => new Promise(resolve => setTimeout(resolve, 1000)))().catch(e => {
+    console.log(e) // "Reject reason"
+});
+
+
+setTimeout(() => {
+   c.rejectAll("Reject reason") // optional value to pass to catch handler 
+}, 500)
+
+```
