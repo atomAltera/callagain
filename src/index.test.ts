@@ -1,4 +1,4 @@
-import {CallAgain} from '../src';
+import {CallAgain} from './index';
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(() => resolve(ms), ms * 100));
 
