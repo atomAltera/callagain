@@ -32,6 +32,9 @@ interface CallEntry {
 
     attempts: number
     delay: number
+
+    rejectAsap?: boolean
+    rejectReason?: any
 }
 
 interface CallHistory {
@@ -54,6 +57,8 @@ export class CallAgain {
 
     private _errorHandlers: ErrorHandler[] = [];
     private _lastId = 0;
+
+    private _rejected = false;
 
     public constructor(options?: CallAgainOptions) {
         this._maxConcurrentCalls = options && options.maxConcurrentCalls;
@@ -93,6 +98,33 @@ export class CallAgain {
     public onError(handler: ErrorHandler): this {
         this._errorHandlers.unshift(handler);
         return this;
+    }
+
+    /**
+     * Rejects all current and pending calls
+     * @param reason object
+     */
+    public rejectAll(reason?: any) {
+        // set flag for async operations
+        this._rejected = true;
+
+        // preventing next cycle call
+        clearTimeout(this._cycleTimer);
+        this._cycleTimer = undefined;
+
+        // rejecting waiting and processing
+        this._entries.find({status: {$in: [CallEntryStatus.waiting, CallEntryStatus.processing]}})
+            .map(entry => entry.reject && entry.reject(reason))
+        ;
+
+        // reject init entries
+        this._entries.findAndUpdate(
+            e => e.status === CallEntryStatus.init,
+            e => {
+                e.rejectAsap = true;
+                e.rejectReason = reason;
+            }
+        );
     }
 
     /**
@@ -236,10 +268,14 @@ export class CallAgain {
         Promise.resolve()
             .then(() => entry.func.apply(undefined, entry.args))
             .then(result => {
+                if (this._rejected) return;
+
                 entry.status = CallEntryStatus.done;
                 entry.resolve!(result);
             })
             .catch(e => {
+                if (this._rejected) return;
+
                 entry.attempts = entry.attempts + 1;
 
                 if ((this._maxRetryAttempts !== undefined) && (entry.attempts >= this._maxRetryAttempts)) {
@@ -256,8 +292,8 @@ export class CallAgain {
                     entry.reject!(e);
                 }
             })
-            .then(() => this._entries.update(entry))
-            .then(() => this._planNextCycle())
+            .then(() => this._rejected || this._entries.update(entry))
+            .then(() => this._rejected || this._planNextCycle())
         ;
     }
 
@@ -278,6 +314,10 @@ export class CallAgain {
      * @private
      */
     private _onWrapperCalled(func: Function, args: any) {
+        if (this._rejected) {
+            this._rejected = false;
+        }
+
         const id = this._getNewId();
 
         this._entries.insert({
@@ -298,11 +338,19 @@ export class CallAgain {
         this._planNextCycle();
 
         return new Promise((resolve, reject) => {
-            this._entries.findAndUpdate({id}, e => {
-                e.resolve = resolve;
-                e.reject = reject;
-                e.status = CallEntryStatus.waiting;
-            });
+            const entry = this._entries.findOne({id})!;
+
+            if (entry.rejectAsap) {
+                reject(entry.rejectReason);
+
+                entry.status = CallEntryStatus.done;
+            } else {
+                entry.resolve = resolve;
+                entry.reject = reject;
+                entry.status = CallEntryStatus.waiting;
+            }
+
+            this._entries.update(entry);
         });
     }
 
